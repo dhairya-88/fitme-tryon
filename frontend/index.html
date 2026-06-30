@@ -711,6 +711,9 @@
             <span class="site-badge">Ajio</span>
             & more
           </div>
+          <div style="margin-top:10px;padding:10px 12px;background:#fff8f0;border:1px solid #f5d9c4;border-radius:8px;font-size:11px;color:#a0440e;line-height:1.5;">
+            <strong>Not connected yet:</strong> automatic link fetching is coming soon. For now, switch to "Upload Screenshot" to actually generate a try-on.
+          </div>
         </div>
 
         <!-- SCREENSHOT TAB -->
@@ -879,6 +882,9 @@
 </footer>
 
 <script>
+  // Your live Render backend from Step 2/3.
+  const BACKEND_URL = 'https://fitme-tryon.onrender.com';
+
   // STATE
   let state = {
     tab: 'link',
@@ -1003,81 +1009,96 @@
     document.getElementById('statusBar').classList.remove('visible');
   }
 
-  // GENERATION FLOW (demo — integrates with Replicate / Fashn.ai in production)
+  // GENERATION FLOW — calls the real backend (Step 4)
   async function startGeneration() {
     if (!isReady()) {
       alert('Please provide a product (link or screenshot) and your photo.');
       return;
     }
+
+    if (state.tab === 'link') {
+      showStatus('error', "Link fetching isn't connected yet — switch to \"Upload Screenshot\" to generate a real try-on.");
+      return;
+    }
+
     state.generating = true;
     const btn = document.getElementById('generateBtn');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Generating...';
 
-    showStatus('loading', 'Step 1 of 3 — Extracting garment from product...');
+    // Free tier can genuinely take a couple minutes — cycle honest
+    // status messages so it doesn't look frozen.
+    const waitMessages = [
+      'Waking up the server...',
+      'Sending your photos to the AI model...',
+      'Still working — free tier can take a few minutes...',
+      'Generation queue is busy, hang tight...',
+      'Almost there...',
+    ];
+    let msgIndex = 0;
+    showStatus('loading', waitMessages[0]);
+    const cycleInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, waitMessages.length - 1);
+      showStatus('loading', waitMessages[msgIndex]);
+    }, 18000);
 
-    // Simulate pipeline (in real app: POST to your backend → Replicate IDM-VTON API)
-    await delay(1800);
-    showStatus('loading', 'Step 2 of 3 — Analysing your pose & body shape...');
-    await delay(1800);
-    showStatus('loading', 'Step 3 of 3 — Rendering AI try-on image...');
-    await delay(2000);
+    try {
+      const formData = new FormData();
+      formData.append('person_image', state.personFile);
+      formData.append('garment_image', state.productFile);
+      formData.append('category', state.category);
 
-    hideStatus();
-    showResult();
+      const response = await fetch(`${BACKEND_URL}/api/tryon`, {
+        method: 'POST',
+        body: formData,
+      });
 
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Try-On`;
-    state.generating = false;
+      clearInterval(cycleInterval);
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Server error (${response.status})`);
+      }
+
+      const data = await response.json();
+      hideStatus();
+      showResult(data.result_image);
+
+    } catch (err) {
+      clearInterval(cycleInterval);
+      showStatus('error', err.message || 'Something went wrong — please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Try-On`;
+      state.generating = false;
+    }
   }
 
-  function showResult() {
+  function showResult(resultImageDataUrl) {
     const resultSection = document.getElementById('resultSection');
     resultSection.classList.add('visible');
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Show person photo in result
     const personSrc = document.getElementById('personPreviewImg').src;
-    if (personSrc && personSrc !== window.location.href) {
+    if (personSrc) {
       document.getElementById('origPlaceholder').style.display = 'none';
       const img = document.getElementById('resultOrigImg');
       img.src = personSrc;
       img.style.display = 'block';
     }
 
-    // Show product in result
     const productSrc = document.getElementById('productPreviewImg').src;
-    if (productSrc && productSrc !== window.location.href) {
+    if (productSrc) {
       document.getElementById('productPlaceholder').style.display = 'none';
       const img = document.getElementById('resultProductImg');
       img.src = productSrc;
       img.style.display = 'block';
     }
 
-    // Show skeleton then "result"
-    document.getElementById('resultSkeleton').style.display = 'block';
-    document.getElementById('resultOutputImg').style.display = 'none';
-
-    // In production: display the actual API result image here
-    // For demo: after 1s remove skeleton and show a message
-    setTimeout(() => {
-      document.getElementById('resultSkeleton').style.display = 'none';
-      // In a real build, you would set:
-      // document.getElementById('resultOutputImg').src = apiResultUrl;
-      // document.getElementById('resultOutputImg').style.display = 'block';
-
-      // Demo placeholder
-      const wrap = document.getElementById('resultImgWrap');
-      const placeholder = document.createElement('div');
-      placeholder.className = 'result-img-placeholder';
-      placeholder.style.cssText = 'flex-direction:column;gap:8px;padding:20px;text-align:center;';
-      placeholder.innerHTML = `
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <p style="font-weight:600;font-size:13px;color:var(--ink)">AI result appears here</p>
-        <p style="font-size:11px;color:var(--ink-muted);line-height:1.5">Connect to Replicate or Fashn.ai API<br>to get real try-on images</p>
-      `;
-      wrap.appendChild(placeholder);
-    }, 1000);
+    document.getElementById('resultSkeleton').style.display = 'none';
+    const outputImg = document.getElementById('resultOutputImg');
+    outputImg.src = resultImageDataUrl;
+    outputImg.style.display = 'block';
   }
 
   function tryAgain() {
@@ -1091,7 +1112,17 @@
   }
 
   function downloadResult() {
-    alert('In production: downloads the AI-generated try-on image.');
+    const img = document.getElementById('resultOutputImg');
+    if (!img.src || !img.src.startsWith('data:')) {
+      alert('No result to download yet — generate a try-on first.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = img.src;
+    link.download = 'fitme-tryon-result.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function showMiniSuccess(msg) {
