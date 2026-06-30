@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitMe – Virtual Try-On</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-muted: #8a8a8a;
+    --canvas: #f7f5f2;
+    --card: #ffffff;
+    --accent: #c2440e;
+    --accent-light: #fdf0eb;
+    --accent-mid: #e8632a;
+    --border: #e4e0da;
+    --border-soft: #f0ede8;
+    --success: #1a7a4a;
+    --success-bg: #edf7f2;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--canvas);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+  .tagline-header {
+    font-size: 12px;
+    color: var(--ink-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 52px 20px 36px;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero p {
+    font-size: 15px;
+    color: var(--ink-soft);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* MAIN LAYOUT */
+  .main-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .step-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .card-header p {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .card-body { padding: 24px 28px; }
+
+  /* CATEGORY SELECTOR */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+  }
+  .categories-scroll {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .cat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .cat-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .cat-chip.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+  }
+  .cat-chip .cat-icon {
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  /* DIVIDER TABS */
+  .input-tabs {
+    display: flex;
+    background: var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 20px;
+    gap: 4px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 14px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .tab-btn.active {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .tab-btn svg { flex-shrink: 0; }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* LINK INPUT */
+  .link-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .link-input-wrap svg {
+    position: absolute;
+    left: 14px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .link-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 48px 0 44px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .link-input::placeholder { color: var(--ink-muted); }
+  .link-input:focus { border-color: var(--accent); }
+  .paste-btn {
+    position: absolute;
+    right: 8px;
+    height: 34px;
+    padding: 0 12px;
+    background: var(--accent-light);
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .paste-btn:hover { background: #fbe2d6; }
+
+  .supported-text {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .site-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--border-soft);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    background: var(--border-soft);
+  }
+  .upload-zone:hover, .upload-zone.dragging {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .upload-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    border: 1px solid var(--border);
+  }
+  .upload-zone h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .upload-zone p {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .upload-zone .browse-link {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* PREVIEW IMAGE */
+  .preview-container {
+    position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    aspect-ratio: 4/5;
+    background: var(--border-soft);
+    display: none;
+  }
+  .preview-container.visible { display: block; }
+  .preview-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .preview-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .preview-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 14px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.5));
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+  }
+
+  /* PERSON UPLOAD (right card) */
+  .person-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    background: var(--border-soft);
+    aspect-ratio: 3/4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .person-zone:hover, .person-zone.dragging {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .person-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .person-silhouette {
+    opacity: 0.25;
+    margin-bottom: 4px;
+  }
+  .person-zone h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .person-zone p {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+  .tips-list {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 12px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tips-list li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+  }
+  .tip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* GENERATE BUTTON */
+  .generate-wrap {
+    padding: 0 24px 28px;
+  }
+  .generate-btn {
+    width: 100%;
+    height: 52px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+  .generate-btn:hover { background: var(--accent-mid); }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled {
+    background: var(--border);
+    color: var(--ink-muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* STATUS / RESULT */
+  .status-bar {
+    margin: 0 24px 20px;
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  .status-bar.visible { display: flex; }
+  .status-bar.loading {
+    background: #fff8f0;
+    border: 1px solid #f5d9c4;
+    color: #a0440e;
+  }
+  .status-bar.success {
+    background: var(--success-bg);
+    border: 1px solid #a8dfc4;
+    color: var(--success);
+  }
+  .status-bar.error {
+    background: #fff0f0;
+    border: 1px solid #f5c4c4;
+    color: #a00e0e;
+  }
+
+  /* RESULT SECTION */
+  .result-section {
+    max-width: 1100px;
+    margin: 0 auto 60px;
+    padding: 0 24px;
+    display: none;
+  }
+  .result-section.visible { display: block; }
+  .result-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .result-card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-img-wrap {
+    aspect-ratio: 3/4;
+    background: var(--border-soft);
+    position: relative;
+    overflow: hidden;
+  }
+  .result-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .result-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    color: var(--ink-muted);
+    font-size: 13px;
+  }
+  .action-row {
+    padding: 14px 18px;
+    display: flex;
+    gap: 8px;
+  }
+  .action-btn {
+    flex: 1;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .action-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .action-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .action-btn.primary:hover { background: var(--accent-mid); }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .spinner.dark {
+    border-color: rgba(160,68,14,0.2);
+    border-top-color: var(--accent);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, var(--border-soft) 25%, var(--border) 50%, var(--border-soft) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  footer p { font-size: 12px; color: var(--ink-muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: 1fr 1fr; }
+    header { padding: 0 20px; }
+    .hero h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Fit<span>Me</span></div>
+  <div class="tagline-header">AI Virtual Try-On</div>
+</header>
+
+<div class="hero">
+  <h1>See it on you,<br><em>before you buy it.</em></h1>
+  <p>Paste a product link or upload a screenshot — our AI will show you exactly how it looks on your body.</p>
+</div>
+
+<div class="main-grid">
+
+  <!-- LEFT CARD: PRODUCT INPUT -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">1</div>
+        <div>
+          <h2>Choose the product</h2>
+          <p>Paste a link or upload a screenshot from any shopping app</p>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- CATEGORY SELECTOR -->
+        <div class="section-label">Select category</div>
+        <div class="categories-scroll" id="catGrid">
+          <button class="cat-chip active" data-cat="top" onclick="selectCat(this)"><span class="cat-icon">👕</span> Top / Shirt</button>
+          <button class="cat-chip" data-cat="kurta" onclick="selectCat(this)"><span class="cat-icon">🩱</span> Kurta</button>
+          <button class="cat-chip" data-cat="dress" onclick="selectCat(this)"><span class="cat-icon">👗</span> Dress</button>
+          <button class="cat-chip" data-cat="saree" onclick="selectCat(this)"><span class="cat-icon">🥻</span> Saree</button>
+          <button class="cat-chip" data-cat="lehenga" onclick="selectCat(this)"><span class="cat-icon">👘</span> Lehenga</button>
+          <button class="cat-chip" data-cat="jeans" onclick="selectCat(this)"><span class="cat-icon">👖</span> Jeans / Pants</button>
+          <button class="cat-chip" data-cat="jacket" onclick="selectCat(this)"><span class="cat-icon">🧥</span> Jacket</button>
+          <button class="cat-chip" data-cat="shoes" onclick="selectCat(this)"><span class="cat-icon">👟</span> Shoes</button>
+          <button class="cat-chip" data-cat="watch" onclick="selectCat(this)"><span class="cat-icon">⌚</span> Watch</button>
+          <button class="cat-chip" data-cat="sunglasses" onclick="selectCat(this)"><span class="cat-icon">🕶️</span> Sunglasses</button>
+          <button class="cat-chip" data-cat="bag" onclick="selectCat(this)"><span class="cat-icon">👜</span> Bag</button>
+          <button class="cat-chip" data-cat="jewellery" onclick="selectCat(this)"><span class="cat-icon">💍</span> Jewellery</button>
+        </div>
+
+        <!-- INPUT MODE TOGGLE -->
+        <div class="input-tabs">
+          <button class="tab-btn active" id="tab-link" onclick="switchTab('link')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Paste Product Link
+          </button>
+          <button class="tab-btn" id="tab-screenshot" onclick="switchTab('screenshot')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            Upload Screenshot
+          </button>
+        </div>
+
+        <!-- LINK TAB -->
+        <div class="tab-panel active" id="panel-link">
+          <div class="link-input-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <input class="link-input" id="productLink" type="url" placeholder="https://www.myntra.com/shirts/..." />
+            <button class="paste-btn" onclick="pasteFromClipboard()">Paste</button>
+          </div>
+          <div class="supported-text">
+            Works with
+            <span class="site-badge">Myntra</span>
+            <span class="site-badge">Amazon</span>
+            <span class="site-badge">Flipkart</span>
+            <span class="site-badge">Ajio</span>
+            & more
+          </div>
+        </div>
+
+        <!-- SCREENSHOT TAB -->
+        <div class="tab-panel" id="panel-screenshot">
+          <div class="upload-zone" id="productZone"
+               ondrop="handleDrop(event,'product')" ondragover="handleDragOver(event,'product')" ondragleave="handleDragLeave(event,'product')">
+            <input type="file" accept="image/*" onchange="handleFileSelect(event,'product')">
+            <div class="upload-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            </div>
+            <h3>Drop screenshot here</h3>
+            <p>or <span class="browse-link">browse file</span></p>
+            <p style="margin-top:6px;font-size:11px;">PNG, JPG, WEBP · max 10 MB</p>
+          </div>
+          <div class="preview-container" id="productPreview">
+            <img id="productPreviewImg" src="" alt="Product preview">
+            <button class="preview-remove" onclick="clearPreview('product')">×</button>
+            <div class="preview-label" id="productPreviewLabel">Product screenshot</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT CARD: YOUR PHOTO -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">2</div>
+        <div>
+          <h2>Upload your photo</h2>
+          <p>A clear full-body photo gives the best results</p>
+        </div>
+      </div>
+      <div class="card-body" style="padding-bottom:16px;">
+        <div class="person-zone" id="personZone"
+             ondrop="handleDrop(event,'person')" ondragover="handleDragOver(event,'person')" ondragleave="handleDragLeave(event,'person')">
+          <input type="file" accept="image/*" onchange="handleFileSelect(event,'person')">
+          <div class="person-silhouette">
+            <svg width="64" height="96" viewBox="0 0 64 96" fill="none">
+              <ellipse cx="32" cy="16" rx="12" ry="13" fill="var(--ink)"/>
+              <path d="M10 96 Q10 60 32 55 Q54 60 54 96" fill="var(--ink)"/>
+              <path d="M12 45 Q10 72 6 90" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" fill="none"/>
+              <path d="M52 45 Q54 72 58 90" stroke="var(--ink)" stroke-width="10" stroke-linecap="round" fill="none"/>
+              <rect x="16" y="40" width="32" height="30" rx="8" fill="var(--ink)"/>
+            </svg>
+          </div>
+          <h3>Upload your photo</h3>
+          <p>Full-body, front-facing<br>works best</p>
+        </div>
+
+        <div class="preview-container" id="personPreview">
+          <img id="personPreviewImg" src="" alt="Your photo">
+          <button class="preview-remove" onclick="clearPreview('person')">×</button>
+          <div class="preview-label">Your photo</div>
+        </div>
+
+        <ul class="tips-list">
+          <li><span class="tip-dot"></span>Stand straight, full body visible</li>
+          <li><span class="tip-dot"></span>Plain background works best</li>
+          <li><span class="tip-dot"></span>Good lighting, face visible</li>
+          <li><span class="tip-dot"></span>Wear fitted, neutral clothes</li>
+        </ul>
+      </div>
+
+      <!-- STATUS -->
+      <div class="status-bar" id="statusBar">
+        <div class="spinner dark" id="statusSpinner"></div>
+        <span id="statusText">Processing...</span>
+      </div>
+
+      <!-- GENERATE BUTTON -->
+      <div class="generate-wrap">
+        <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate Try-On
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESULT SECTION -->
+<div class="result-section" id="resultSection">
+  <h2>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    Your Try-On Result
+  </h2>
+  <div class="result-grid">
+
+    <div class="result-card">
+      <div class="result-card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        Your original photo
+      </div>
+      <div class="result-img-wrap">
+        <div class="result-img-placeholder" id="origPlaceholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <span>Your photo</span>
+        </div>
+        <img id="resultOrigImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="alert('Change photo')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Change
+        </button>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        AI Try-On
+        <span style="margin-left:auto;font-size:11px;padding:2px 8px;background:var(--success-bg);color:var(--success);border-radius:4px;">New</span>
+      </div>
+      <div class="result-img-wrap" id="resultImgWrap">
+        <div class="result-img-placeholder skeleton" id="resultSkeleton" style="height:100%;border-radius:0;">
+        </div>
+        <img id="resultOutputImg" src="" alt="Try-on result" style="display:none;width:100%;height:100%;object-fit:cover;">
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="downloadResult()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+        <button class="action-btn primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        Product used
+      </div>
+      <div class="result-img-wrap">
+        <div class="result-img-placeholder" id="productPlaceholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>Product image</span>
+        </div>
+        <img id="resultProductImg" src="" alt="Product" style="display:none;width:100%;height:100%;object-fit:contain;padding:16px;">
+      </div>
+      <div class="action-row">
+        <button class="action-btn" id="buyBtn" onclick="openProductLink()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Buy Now
+        </button>
+        <button class="action-btn" onclick="tryAgain()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.61"/></svg>
+          Try Again
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <p>FitMe uses AI (IDM-VTON / Fashn.ai) for virtual try-on. Results are AI-generated and may vary.</p>
+  <p style="color:var(--accent);font-weight:500;">Built with ❤️ for Indian fashion</p>
+</footer>
+
+<script>
+  // STATE
+  let state = {
+    tab: 'link',
+    category: 'top',
+    productLink: '',
+    productFile: null,
+    personFile: null,
+    generating: false
+  };
+
+  // Tab switching
+  function switchTab(tab) {
+    state.tab = tab;
+    document.getElementById('tab-link').classList.toggle('active', tab === 'link');
+    document.getElementById('tab-screenshot').classList.toggle('active', tab === 'screenshot');
+    document.getElementById('panel-link').classList.toggle('active', tab === 'link');
+    document.getElementById('panel-screenshot').classList.toggle('active', tab === 'screenshot');
+  }
+
+  // Category selection
+  function selectCat(el) {
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    state.category = el.dataset.cat;
+  }
+
+  // Paste from clipboard
+  async function pasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text.startsWith('http')) {
+        document.getElementById('productLink').value = text;
+        state.productLink = text;
+        showMiniSuccess('Link pasted!');
+      } else {
+        alert('No valid URL found in clipboard.');
+      }
+    } catch {
+      document.getElementById('productLink').focus();
+      document.getElementById('productLink').select();
+    }
+  }
+
+  // File handling
+  function handleFileSelect(e, type) {
+    const file = e.target.files[0];
+    if (file) handleFile(file, type);
+  }
+
+  function handleDrop(e, type) {
+    e.preventDefault();
+    document.getElementById(type === 'product' ? 'productZone' : 'personZone').classList.remove('dragging');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFile(file, type);
+  }
+
+  function handleDragOver(e, type) {
+    e.preventDefault();
+    document.getElementById(type === 'product' ? 'productZone' : 'personZone').classList.add('dragging');
+  }
+
+  function handleDragLeave(e, type) {
+    document.getElementById(type === 'product' ? 'productZone' : 'personZone').classList.remove('dragging');
+  }
+
+  function handleFile(file, type) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (type === 'product') {
+        state.productFile = file;
+        document.getElementById('productZone').style.display = 'none';
+        document.getElementById('productPreview').classList.add('visible');
+        document.getElementById('productPreviewImg').src = e.target.result;
+        document.getElementById('productPreviewLabel').textContent = file.name;
+      } else {
+        state.personFile = file;
+        document.getElementById('personZone').style.display = 'none';
+        document.getElementById('personPreview').classList.add('visible');
+        document.getElementById('personPreviewImg').src = e.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPreview(type) {
+    if (type === 'product') {
+      state.productFile = null;
+      document.getElementById('productZone').style.display = '';
+      document.getElementById('productPreview').classList.remove('visible');
+      document.getElementById('productPreviewImg').src = '';
+    } else {
+      state.personFile = null;
+      document.getElementById('personZone').style.display = '';
+      document.getElementById('personPreview').classList.remove('visible');
+      document.getElementById('personPreviewImg').src = '';
+    }
+  }
+
+  // Validation
+  function isReady() {
+    const hasProduct = (state.tab === 'link' && document.getElementById('productLink').value.trim()) ||
+                       (state.tab === 'screenshot' && state.productFile);
+    return hasProduct && state.personFile;
+  }
+
+  // Track link input
+  document.getElementById('productLink').addEventListener('input', function() {
+    state.productLink = this.value;
+  });
+
+  // STATUS
+  function showStatus(type, msg) {
+    const bar = document.getElementById('statusBar');
+    const spinner = document.getElementById('statusSpinner');
+    const text = document.getElementById('statusText');
+    bar.className = 'status-bar visible ' + type;
+    spinner.style.display = type === 'loading' ? 'block' : 'none';
+    text.textContent = msg;
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBar').classList.remove('visible');
+  }
+
+  // GENERATION FLOW (demo — integrates with Replicate / Fashn.ai in production)
+  async function startGeneration() {
+    if (!isReady()) {
+      alert('Please provide a product (link or screenshot) and your photo.');
+      return;
+    }
+    state.generating = true;
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating...';
+
+    showStatus('loading', 'Step 1 of 3 — Extracting garment from product...');
+
+    // Simulate pipeline (in real app: POST to your backend → Replicate IDM-VTON API)
+    await delay(1800);
+    showStatus('loading', 'Step 2 of 3 — Analysing your pose & body shape...');
+    await delay(1800);
+    showStatus('loading', 'Step 3 of 3 — Rendering AI try-on image...');
+    await delay(2000);
+
+    hideStatus();
+    showResult();
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate Try-On`;
+    state.generating = false;
+  }
+
+  function showResult() {
+    const resultSection = document.getElementById('resultSection');
+    resultSection.classList.add('visible');
+    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Show person photo in result
+    const personSrc = document.getElementById('personPreviewImg').src;
+    if (personSrc && personSrc !== window.location.href) {
+      document.getElementById('origPlaceholder').style.display = 'none';
+      const img = document.getElementById('resultOrigImg');
+      img.src = personSrc;
+      img.style.display = 'block';
+    }
+
+    // Show product in result
+    const productSrc = document.getElementById('productPreviewImg').src;
+    if (productSrc && productSrc !== window.location.href) {
+      document.getElementById('productPlaceholder').style.display = 'none';
+      const img = document.getElementById('resultProductImg');
+      img.src = productSrc;
+      img.style.display = 'block';
+    }
+
+    // Show skeleton then "result"
+    document.getElementById('resultSkeleton').style.display = 'block';
+    document.getElementById('resultOutputImg').style.display = 'none';
+
+    // In production: display the actual API result image here
+    // For demo: after 1s remove skeleton and show a message
+    setTimeout(() => {
+      document.getElementById('resultSkeleton').style.display = 'none';
+      // In a real build, you would set:
+      // document.getElementById('resultOutputImg').src = apiResultUrl;
+      // document.getElementById('resultOutputImg').style.display = 'block';
+
+      // Demo placeholder
+      const wrap = document.getElementById('resultImgWrap');
+      const placeholder = document.createElement('div');
+      placeholder.className = 'result-img-placeholder';
+      placeholder.style.cssText = 'flex-direction:column;gap:8px;padding:20px;text-align:center;';
+      placeholder.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <p style="font-weight:600;font-size:13px;color:var(--ink)">AI result appears here</p>
+        <p style="font-size:11px;color:var(--ink-muted);line-height:1.5">Connect to Replicate or Fashn.ai API<br>to get real try-on images</p>
+      `;
+      wrap.appendChild(placeholder);
+    }, 1000);
+  }
+
+  function tryAgain() {
+    document.getElementById('resultSection').classList.remove('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openProductLink() {
+    const link = document.getElementById('productLink').value;
+    if (link) window.open(link, '_blank');
+  }
+
+  function downloadResult() {
+    alert('In production: downloads the AI-generated try-on image.');
+  }
+
+  function showMiniSuccess(msg) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;bottom:24px;right:24px;background:var(--success);color:white;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;animation:fadeInUp 0.3s ease;`;
+    el.textContent = '✓ ' + msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
